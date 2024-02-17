@@ -1,17 +1,27 @@
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
+use pdfium_render::prelude::*;
+
 pub struct TemplateApp {
     // Example stuff:
-    label: String,
-
-    value: f32,
+    pdfium: Pdfium,
+    year_start: i32,
+    year_end: i32,
+    month_start: u32,
+    month_end: u32,
+    coordinator: String
 }
 
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
             // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            pdfium: Pdfium::new(
+            Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./"))
+                .or_else(|_| Pdfium::bind_to_system_library()).expect("No library")),
+            year_start: 2024,
+            year_end: 2024,
+            month_start: 1,
+            month_end: 1,
+            coordinator: "".to_string(),
         }
     }
 }
@@ -57,22 +67,42 @@ impl eframe::App for TemplateApp {
             ui.heading("OJT Timesheet Generator v0.1");
 
             ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut self.label);
+                ui.label("Input start year: ");
+                ui.add(egui::Slider::new(&mut self.year_start, 2020..=2040));
             });
-
-            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
+            ui.horizontal(|ui| {
+                ui.label("Input start month: ");
+                ui.add(egui::Slider::new(&mut self.month_start, 1..=12));
+            });
+            ui.horizontal(|ui| {
+                ui.label("Input end year: ");
+                ui.add(egui::Slider::new(&mut self.year_end, self.year_start..=(self.year_start+10)));
+            });
+            ui.horizontal(|ui| {
+                ui.label("Input end month: ");
+                ui.add(egui::Slider::new(&mut self.month_end, 1..=12));
+            });
+            ui.horizontal(|ui|{
+                ui.label("Input coordinator name: ");
+                ui.text_edit_singleline(&mut self.coordinator);
+            });
+            ui.label("Leave dates identical for single month output.");
             if ui.button("Generate Sheets").clicked() {
-                self.value += 1.0;
+                for year in self.year_start..=self.year_end {
+                    for mut month in 1..=12 {
+                        if year == self.year_start && month < self.month_start { 
+                            month = self.month_start; 
+                        } else if year == self.year_end && month > self.month_end {
+                            break;
+                        }
+                        super::generate_pdf(&self.pdfium, year, month, &self.coordinator);
+                    }
+                }
             }
 
             ui.separator();
 
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
-
+            ui.label("Authored by James DeLaura");
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                 powered_by_egui_and_eframe(ui);
                 egui::warn_if_debug_build(ui);
