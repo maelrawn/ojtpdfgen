@@ -14,6 +14,10 @@ pub fn generate_date_strings(year: i32, month: u32) -> Vec<String> {
 		.collect::<Vec<String>>()
 }
 
+pub fn generate_monthyear(year:i32, month: u32) -> String {
+	NaiveDate::from_ymd_opt(year, month, 1).unwrap().format("%B %y").to_string()
+}
+
 #[test]
 fn test_date_generation() {
 	let gen_dates = generate_date_strings(2024, 3);
