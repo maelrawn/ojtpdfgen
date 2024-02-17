@@ -3,18 +3,29 @@
 use pdfium_render::prelude::*;
 use std::error::Error;
 
+// have bleach ready for your eyes if you read this. I just needed to get it out
+// in one sitting w/ no experience using any of this or any idea what I'd need.
+// will refactor out of embarrassment later.
+
+mod window;
+pub use window::TemplateApp;
 mod date;
 pub use date::*;
-// #[cfg(not(target_arch = "wasm32"))]
+
+#[cfg(not(target_arch = "wasm32"))]
 fn main() -> Result<(), Box<dyn Error>> {
     // Initialize eframe & egui
-    // let native_options = eframe::NativeOptions {
-    //     viewport: egui::ViewportBuilder::default()
-    //         .with_inner_size([400.0, 300.0])
-    //         .with_min_inner_size([300.0, 220.0])
-    //         .with_icon(
-    //             eframe::icon_data::)
-    // }
+    let native_options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([400.0, 300.0])
+             .with_min_inner_size([300.0, 220.0]),
+        ..Default::default()
+    };
+    eframe::run_native(
+        "eframe template",
+        native_options,
+        Box::new(|cc| Box::new(TemplateApp::new(cc))),
+    );
 
     // Initialize pdfium-render
     let pdfium = Pdfium::default();
@@ -22,8 +33,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // todo!("Generate display window");
     // todo!("Take user input");
     // todo!("Validate user input");
-    // todo!("Generate dates for user input");
-    // todo!("Generate PDF primitives for OJT timesheet");
+
     let mut document = pdfium.create_new_pdf()?;
 
     // US Letter paper has PdfPoints width 612, height 792.
@@ -155,7 +165,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let warning_box_left = chart_exterior_right + 13.0;
     let warning_box_right = page_width.value - 50.0;
     let warning_box_bottom = chart_exterior_bottom;
-    let warning_box_top = chart_exterior_bottom + 60.0;
+    let warning_box_top = chart_exterior_bottom + 50.0;
     page.objects_mut().create_path_object_rect(
         PdfRect::new(
             PdfPoints::new(warning_box_bottom), 
@@ -208,6 +218,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         document.fonts_mut().helvetica_bold(),
         PdfPoints::new(6.0)
     );
+    page.objects_mut().create_text_object(
+        PdfPoints::new(left_bold_line - 40.0),
+        PdfPoints::new(chart_interior_bottom + 3.0),
+        "TOTAL",
+        document.fonts_mut().helvetica_bold(),
+        PdfPoints::new(9.0)
+    );
 
     // Text objects
     // Builtin PDF Font Tokens are:
@@ -242,12 +259,30 @@ fn main() -> Result<(), Box<dyn Error>> {
         PdfPoints::new(9.0)
     );
 
+    page.objects_mut().create_path_object_line(
+    	PdfPoints::new(130.0),
+    	PdfPoints::new(692.0),
+    	PdfPoints::new(280.0),
+    	PdfPoints::new(692.0),
+    	PdfColor::BLACK,
+    	PdfPoints::new(line_medium)
+    );
+
     page.objects_mut().create_text_object(
         PdfPoints::new(350.0),
         PdfPoints::new(695.0),
         "Employer:",
         document.fonts_mut().helvetica_bold(),
         PdfPoints::new(9.0)
+    );
+
+    page.objects_mut().create_path_object_line(
+    	PdfPoints::new(397.0),
+    	PdfPoints::new(692.0),
+    	PdfPoints::new(550.0),
+    	PdfPoints::new(692.0),
+    	PdfColor::BLACK,
+    	PdfPoints::new(line_medium)
     );
 
     page.objects_mut().create_text_object(
@@ -259,11 +294,27 @@ fn main() -> Result<(), Box<dyn Error>> {
     );
 
     page.objects_mut().create_text_object(
+    	PdfPoints::new(115.0),
+    	PdfPoints::new(680.0),
+    	"[   ] Below Average   [   ] Average   [   ] Above Average",
+    	document.fonts_mut().helvetica(),
+    	PdfPoints::new(9.0)
+    );
+
+    page.objects_mut().create_text_object(
         PdfPoints::new(350.0),
         PdfPoints::new(680.0),
         "School Year:",
         document.fonts_mut().helvetica_bold(),
         PdfPoints::new(9.0)
+    );
+
+    page.objects_mut().create_text_object(
+    	PdfPoints::new(410.0),
+    	PdfPoints::new(680.0),
+    	"[   ] 1   [   ] 2   [   ] 3   [   ] 4",
+    	document.fonts_mut().helvetica(),
+    	PdfPoints::new(9.0)
     );
 
     page.objects_mut().create_text_object(
@@ -280,6 +331,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         format!(" {}", generate_monthyear(2024, 2)), 
         document.fonts_mut().helvetica(),
         PdfPoints::new(9.0)
+    );
+
+    page.objects_mut().create_path_object_line(
+    	PdfPoints::new(110.0),
+    	PdfPoints::new(662.0),
+    	PdfPoints::new(210.0),
+    	PdfPoints::new(662.0),
+    	PdfColor::BLACK,
+    	PdfPoints::new(line_medium)
     );
 
     let mut paragraph = vec![
@@ -316,6 +376,187 @@ fn main() -> Result<(), Box<dyn Error>> {
                 PdfPoints::new(9.0)
             );
         });
+
+    let mut lcolelements = vec!["A","B","C","D","E","F","G"];
+    let mut mcolelements = vec![
+        "Safety",
+        "Preparation, loading, use and selection of various tools,",
+        "supplies, machinery and equipment for the trade.",
+        "Hot and cold water systems, water treatment, hot water",
+        "and steam systems, boilers, and backflow prevention.",
+        "Fixture installation",
+        "Determining kinds of pipe and proper installation for",
+        "drainage, waste and venting. Fire stopping and",
+        "installations.",
+        "Gas and industrial piping",
+        "Trouble shooting and repairs",
+    ];
+    let mut rcolelements = vec![
+        "   300", "1,400", "2,100", "1,200", 
+        "1,600", "   800", "   600"
+    ];
+    let mut lines = [1, 2, 2, 1, 3, 1, 1];
+    let mut lindex = 0;
+    let mut height = 0.0;
+    for (num, nlines) in lines.iter().enumerate() {
+        page.objects_mut().create_text_object(
+            PdfPoints::new(chart_exterior_right + 13.0),
+            PdfPoints::new(chart_interior_top - 126.0 
+                - num as f32 * 18.0 
+                - lindex as f32 * 12.0),
+            lcolelements[num], 
+            document.fonts_mut().helvetica_bold(),
+            PdfPoints::new(9.0)
+        );
+        for x in 0..*nlines {
+            height = chart_interior_top - 126.0 
+                - num as f32 * 18.0 
+                - lindex as f32 * 12.0
+                - x as f32 * 12.0;
+            page.objects_mut().create_text_object(
+            PdfPoints::new(chart_exterior_right + 28.0),
+            PdfPoints::new(height),
+            mcolelements[lindex + x], 
+            document.fonts_mut().helvetica(),
+            PdfPoints::new(9.0)
+            );
+            if x == *nlines - 1 {
+                page.objects_mut().create_text_object(
+                page_width - PdfPoints::new(62.0),
+                PdfPoints::new(height),
+                rcolelements[num], 
+                document.fonts_mut().helvetica(),
+                PdfPoints::new(9.0));
+            }
+        }
+        lindex += nlines;
+    }
+
+    page.objects_mut().create_path_object_line(
+    	PdfPoints::new(520.0),
+    	PdfPoints::new(height - 13.0),
+    	PdfPoints::new(573.0),
+    	PdfPoints::new(height - 13.0),
+    	PdfColor::BLACK,
+    	PdfPoints::new(line_medium)
+    );
+
+    page.objects_mut().create_text_object(
+        page_width - PdfPoints::new(182.5),
+        PdfPoints::new(height - 30.0),
+        "TOTAL HOURS REQUIRED: 8,000", 
+        document.fonts_mut().helvetica_bold(),
+        PdfPoints::new(9.0)
+    );
+
+    page.objects_mut().create_text_object(
+        PdfPoints::new(warning_box_left + 5.0),
+        PdfPoints::new(warning_box_top - 10.0),
+        "PRINT CLEARLY                          USE FULL HOURS ONLY", 
+        document.fonts_mut().helvetica_bold(),
+        PdfPoints::new(9.0)
+    );
+
+    page.objects_mut().create_text_object(
+        PdfPoints::new(warning_box_left + 50.0),
+        PdfPoints::new(warning_box_top - 28.0),
+        "Make sure A through G totals are in the", 
+        document.fonts_mut().helvetica(),
+        PdfPoints::new(9.0)
+    );
+
+    page.objects_mut().create_text_object(
+        PdfPoints::new(warning_box_left + 50.0),
+        PdfPoints::new(warning_box_top - 40.0),
+        "TOTAL on the bottom and on the right", 
+        document.fonts_mut().helvetica(),
+        PdfPoints::new(9.0)
+    );
+
+    // Lower section
+    let lower_header_x = chart_exterior_right - 105.0;
+    let lower_header_y = chart_exterior_bottom - 20.0;
+    page.objects_mut().create_text_object(
+        PdfPoints::new(lower_header_x),
+        PdfPoints::new(lower_header_y),
+        "EMPLOYER / SUPERVISOR ON-THE-JOB EVALUATION", 
+        document.fonts_mut().helvetica_bold(),
+        PdfPoints::new(9.0)
+    );
+
+    let mut radios = vec![
+        "Work Habits:", "Dependability:", "Trade Knowledge:", 
+        "Attitude:", "Cooperation:"
+    ];
+    radios.iter()
+        .enumerate()
+        .for_each(|(num, x)| {
+            page.objects_mut().create_text_object(
+                PdfPoints::new(lower_header_x - 30.0 ),
+                PdfPoints::new(lower_header_y - (num+1) as f32 * 18.0),
+                x, 
+                document.fonts_mut().helvetica_bold(),
+                PdfPoints::new(9.0)
+            );
+        });
+
+    for x in 1..=5 {
+    page.objects_mut().create_text_object(
+    	PdfPoints::new(lower_header_x + 60.0),
+    	PdfPoints::new(lower_header_y - x as f32 * 18.0),
+    	"[   ] Below Average   [   ] Average   [   ] Above Average",
+    	document.fonts_mut().helvetica(),
+    	PdfPoints::new(9.0)
+    );}
+
+	page.objects_mut().create_text_object(
+    	PdfPoints::new(80.0),
+    	PdfPoints::new(50.0),
+    	"Employer / Supervisor Signature",
+    	document.fonts_mut().helvetica_bold(),
+    PdfPoints::new(9.0));
+
+    page.objects_mut().create_text_object(
+    	PdfPoints::new(340.0),
+    	PdfPoints::new(50.0),
+    	"Title",
+    	document.fonts_mut().helvetica_bold(),
+    PdfPoints::new(9.0));
+
+    page.objects_mut().create_text_object(
+    	PdfPoints::new(490.0),
+    	PdfPoints::new(50.0),
+    	"Date",
+    	document.fonts_mut().helvetica_bold(),
+    PdfPoints::new(9.0));
+
+    page.objects_mut().create_path_object_line(
+    	PdfPoints::new(50.0),
+    	PdfPoints::new(60.0),
+    	PdfPoints::new(250.0),
+    	PdfPoints::new(60.0),
+    	PdfColor::BLACK,
+    	PdfPoints::new(line_medium)
+    );
+
+    page.objects_mut().create_path_object_line(
+    	PdfPoints::new(300.0),
+    	PdfPoints::new(60.0),
+    	PdfPoints::new(400.0),
+    	PdfPoints::new(60.0),
+    	PdfColor::BLACK,
+    	PdfPoints::new(line_medium)
+    );
+
+    page.objects_mut().create_path_object_line(
+    	PdfPoints::new(450.0),
+    	PdfPoints::new(60.0),
+    	PdfPoints::new(550.0),
+    	PdfPoints::new(60.0),
+    	PdfColor::BLACK,
+    	PdfPoints::new(line_medium)
+    );
+
 
     // todo!("Fill primitives with data, form fields");
     // todo!("Export PDF");
