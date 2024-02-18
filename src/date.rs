@@ -15,7 +15,7 @@ pub fn generate_date_strings(year: i32, month: u32) -> Vec<String> {
 }
 
 pub fn generate_monthyear(year:i32, month: u32) -> String {
-	NaiveDate::from_ymd_opt(year, month, 1).unwrap().format("%B %y").to_string()
+	NaiveDate::from_ymd_opt(year, month, 1).unwrap().format("%B %Y").to_string()
 }
 
 #[test]

@@ -1,7 +1,6 @@
 use pdfium_render::prelude::*;
 
 pub struct TemplateApp {
-    // Example stuff:
     pdfium: Pdfium,
     year_start: i32,
     year_end: i32,
@@ -13,10 +12,10 @@ pub struct TemplateApp {
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
             pdfium: Pdfium::new(
             Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./"))
                 .or_else(|_| Pdfium::bind_to_system_library()).expect("No library")),
+            // pdfium: Pdfium::new(Pdfium::bind_to_statically_linked_library().unwrap()),
             year_start: 2024,
             year_end: 2024,
             month_start: 1,

@@ -29,14 +29,14 @@ pub fn generate_pdf(pdfium: &Pdfium, year:i32, month:u32, coordinator: &String) 
 
     // some reference lines
 
-    page.objects_mut().create_path_object_line(
-        page_width/2.0, 
-        PdfPoints::new(0.0), 
-        page_width/2.0, 
-        page_height,
-        PdfColor::BLACK,
-        PdfPoints::new(line_thin),
-    );
+    // page.objects_mut().create_path_object_line(
+    //     page_width/2.0, 
+    //     PdfPoints::new(0.0), 
+    //     page_width/2.0, 
+    //     page_height,
+    //     PdfColor::BLACK,
+    //     PdfPoints::new(line_thin),
+    // );
 
     page.objects_mut().create_path_object_rect(
         PdfRect::new(
